@@ -14,6 +14,12 @@ func main() {
 
 	fileServer := http.FileServer(http.Dir("."))
 
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// Serve index.html for root and fall back to normal static file handling otherwise.
 		if r.URL.Path == "/" {
