@@ -2,14 +2,14 @@
 // FIREBASE CONFIG & INIT (COMPAT VERSION)
 // ==========================================
 const firebaseConfig = {
-    apiKey: "AIzaSyBuL1g1nCDi_0FwIi0cdZAhw_FxWtaI84s",
-    authDomain: "westroads-4292e.firebaseapp.com",
-    databaseURL: "https://westroads-4292e-default-rtdb.firebaseio.com",
-    projectId: "westroads-4292e",
-    storageBucket: "westroads-4292e.firebasestorage.app",
-    messagingSenderId: "385355475632",
-    appId: "1:385355475632:web:b5d65189197a8d20d7e975",
-    measurementId: "G-4PS4S7N52Y"
+    apiKey: "AIzaSyAYo74AlM-21r-wSIlyo2g_xQRodczE000",
+    authDomain: "whsbuscontroller.firebaseapp.com",
+    databaseURL: "https://whsbuscontroller-default-rtdb.firebaseio.com",
+    projectId: "whsbuscontroller",
+    storageBucket: "whsbuscontroller.firebasestorage.app",
+    messagingSenderId: "824973683961",
+    appId: "1:824973683961:web:225bed8f5743d6c7524628",
+    measurementId: "G-DNXF26M2SJ"
 };
 
 // Initialisierung über die globalen Fenster-Objekte des CDN
