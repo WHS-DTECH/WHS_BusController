@@ -1,0 +1,6 @@
+staticSites:
+  - name: whs-buscontroller
+    branch: main
+    buildCommand: ""
+    publishPath: .
+    pullRequestPreviewsEnabled: false
