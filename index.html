@@ -204,75 +204,59 @@
             executeAuth("par@test.com", "123456");
         }
 
+        // Hilfsfunktion für Fehlermeldungen
+        function showError(msg, color = "#EF4444") {
+            const errEl = document.getElementById('error-msg');
+            errEl.style.color = color;
+            errEl.innerText = msg;
+        }
+
         function login() {
             const e = document.getElementById('email').value.trim();
             const p = document.getElementById('password').value;
             
-            if (!e) {
-                document.getElementById('error-msg').style.color = "#EF4444";
-                document.getElementById('error-msg').innerText = "Please enter your email address.";
-                return;
-            }
+            if (!e) return showError("Please enter your email address.");
+            if (!p) return showError("Please enter your password.");
             
-            // Check which sign-in method exists for this email
-            auth.fetchSignInMethodsForEmail(e).then((methods) => {
-                if (methods.includes('google.com')) {
-                    // It's a Google account! Trigger the Google popup
-                    document.getElementById('error-msg').style.color = "#34D399";
-                    document.getElementById('error-msg').innerText = "Google account detected. Please sign in via the popup...";
-                    
-                    auth.signInWithPopup(googleProvider).then((result) => {
-                        // Ensure the entered email matches the Google account
-                        if (result.user.email !== e) {
-                            document.getElementById('error-msg').style.color = "#EF4444";
-                            document.getElementById('error-msg').innerText = "The entered email does not match the Google account.";
-                            auth.signOut();
-                            return;
-                        }
-                        checkUserRoleAndRedirect(result.user.uid);
-                    }).catch(handleAuthError);
-                    
-                } else {
-                    // Normal email/password account
-                    if (!p) {
-                        document.getElementById('error-msg').style.color = "#EF4444";
-                        document.getElementById('error-msg').innerText = "Please enter your password.";
-                        return;
-                    }
-                    executeAuth(e, p);
-                }
-            }).catch(error => {
-                // If the email does not exist, executeAuth will handle it
-                if (!p) {
-                    document.getElementById('error-msg').style.color = "#EF4444";
-                    document.getElementById('error-msg').innerText = "Please enter your password.";
-                } else {
-                    executeAuth(e, p);
-                }
-            });
+            executeAuth(e, p);
         }
         
-        // Helper function to avoid duplicate code for checking roles
+        // Helfer-Funktion zur Weiterleitung
         function checkUserRoleAndRedirect(uid) {
             db.ref('users/' + uid).once('value').then(snap => {
                 const userData = snap.val();
                 if (!userData || userData.role === 'none') {
-                    document.getElementById('error-msg').style.color = "#EF4444";
-                    document.getElementById('error-msg').innerText = "Access denied. Please contact the administrator.";
+                    showError("Access denied. Please contact the administrator.");
                     auth.signOut();
                     return;
                 }
                 redirectBasedOnRole(userData.role);
             });
         }
-        
-        // Centralized error handling
-        function handleAuthError(error) {
-            console.error("Auth Error: ", error);
-            document.getElementById('error-msg').style.color = "#EF4444";
-            document.getElementById('error-msg').innerText = "Invalid credentials. Please try again.";
+
+        // Der E-Mail/Passwort Login Prozess
+        function executeAuth(email, password) {
+            auth.signInWithEmailAndPassword(email, password).then((userCredential) => {
+                checkUserRoleAndRedirect(userCredential.user.uid);
+            }).catch(error => {
+                console.error("Auth Error: ", error);
+                
+                // Falls der Login fehlschlägt, prüfen wir im Hintergrund, ob es eigentlich ein Google-Account ist
+                if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+                    auth.fetchSignInMethodsForEmail(email).then((methods) => {
+                        if (methods.includes('google.com')) {
+                            showError("This email is linked with Google. Please click 'Login with Google'.");
+                        } else {
+                            showError("Invalid credentials. Please try again.");
+                        }
+                    }).catch(() => showError("Invalid credentials. Please try again."));
+                } else {
+                    showError("Invalid credentials. Please try again.");
+                }
+            });
         }
 
+        // Der Google-Popup Prozess (Direktaufruf)
         function createAccountWithGoogle() {
             const googleBtn = document.querySelector("button[onclick='createAccountWithGoogle()']");
             if (googleBtn) {
@@ -280,6 +264,7 @@
                 googleBtn.innerText = "Loading Google...";
             }
         
+            // Sofortiger Aufruf -> Kein Popup-Blocker mehr!
             auth.signInWithPopup(googleProvider).then((result) => {
                 const user = result.user;
                 
@@ -292,8 +277,7 @@
                             role: 'none',
                             schoolID: ''
                         }).then(() => {
-                            document.getElementById('error-msg').style.color = "#34D399";
-                            document.getElementById('error-msg').innerText = "Account created. Please contact the administrator.";
+                            showError("Account created. Please contact the administrator.", "#34D399");
                             
                             setTimeout(() => { 
                                 auth.signOut(); 
@@ -303,8 +287,7 @@
                     } else {
                         const userData = snap.val();
                         if (userData.role === 'none') {
-                            document.getElementById('error-msg').style.color = "#EF4444";
-                            document.getElementById('error-msg').innerText = "Your account does not have permissions yet. Please contact the administrator.";
+                            showError("Your account does not have permissions yet. Please contact the administrator.");
                             setTimeout(() => { 
                                 auth.signOut(); 
                                 if (googleBtn) { googleBtn.disabled = false; googleBtn.innerText = "Login with Google"; }
@@ -317,38 +300,17 @@
                 });
             }).catch(error => {
                 if (googleBtn) { googleBtn.disabled = false; googleBtn.innerText = "Login with Google"; }
-                if (error.code === "auth/cancelled-popup-request") return;
+                
+                // Ignoriere den Fehler, wenn der Nutzer das Popup selbst wegklickt
+                if (error.code === "auth/cancelled-popup-request" || error.code === "auth/popup-closed-by-user") {
+                    return showError("Login cancelled by user.");
+                }
                 
                 console.error("Google Auth Error: ", error);
-                document.getElementById('error-msg').style.color = "#EF4444";
-                document.getElementById('error-msg').innerText = "Google sign-in failed.";
+                showError("Google sign-in failed.");
             });
         }
 
-        // Unified pipeline for authentication checking
-        function executeAuth(email, password) {
-            auth.signInWithEmailAndPassword(email, password).then((userCredential) => {
-                
-                db.ref('users/' + userCredential.user.uid).once('value').then(snap => {
-                    const userData = snap.val();
-                    
-                    if (!userData || userData.role === 'none') {
-                        document.getElementById('error-msg').style.color = "#EF4444";
-                        document.getElementById('error-msg').innerText = "Access denied. Please contact the administrator.";
-                        auth.signOut();
-                        return;
-                    }
-                    
-                    redirectBasedOnRole(userData.role);
-                });
-            }).catch(error => {
-                console.error("Auth Error: ", error);
-                document.getElementById('error-msg').style.color = "#EF4444";
-                document.getElementById('error-msg').innerText = "Invalid credentials. Please try again.";
-            });
-        }
-
-        // Navigation control for all 4 active roles
         function redirectBasedOnRole(role) {
             if(role === 'admin') window.location.href = 'admin.html';
             if(role === 'parent') window.location.href = 'parent.html';
