@@ -1,21 +1,26 @@
 // ==========================================
 // FIREBASE CONFIG & INIT (COMPAT VERSION)
 // ==========================================
+// Firebase Konfiguration
 const firebaseConfig = {
-    apiKey: "AIzaSyAYo74AlM-21r-wSIlyo2g_xQRodczE000",
-    authDomain: "whsbuscontroller.firebaseapp.com",
-    databaseURL: "https://whsbuscontroller-default-rtdb.firebaseio.com",
-    projectId: "whsbuscontroller",
-    storageBucket: "whsbuscontroller.firebasestorage.app",
-    messagingSenderId: "824973683961",
-    appId: "1:824973683961:web:225bed8f5743d6c7524628",
-    measurementId: "G-DNXF26M2SJ"
+  apiKey: "AIzaSyAYo74AlM-21r-wSIlyo2g_xQRodczE000",
+  authDomain: "whsbuscontroller.firebaseapp.com",
+  databaseURL: "https://whsbuscontroller-default-rtdb.firebaseio.com",
+  projectId: "whsbuscontroller",
+  storageBucket: "whsbuscontroller.firebasestorage.app",
+  messagingSenderId: "824973683961",
+  appId: "1:824973683961:web:225bed8f5743d6c7524628",
+  measurementId: "G-DNXF26M2SJ"
 };
 
-// Initialisierung über die globalen Fenster-Objekte des CDN
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.database();
+// Initialisierung über das globale firebase-Objekt (Compat-Modus)
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
+// Globale Variablen für auth und db definieren, damit login.html darauf zugreifen kann
+window.auth = firebase.auth();
+window.db = firebase.database();
 
 // ==========================================
 // GLOBALE KARTEN-FUNKTIONEN
