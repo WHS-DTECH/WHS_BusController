@@ -1,6 +1,8 @@
-staticSites:
-  - name: whs-buscontroller
+services:
+  - type: web
+    name: whs-buscontroller
+    env: go
     branch: main
-    buildCommand: ""
-    publishPath: .
-    pullRequestPreviewsEnabled: false
+    buildCommand: go build -tags netgo -ldflags '-s -w' -o app
+    startCommand: ./app
+    autoDeploy: true
